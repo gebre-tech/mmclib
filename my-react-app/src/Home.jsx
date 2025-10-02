@@ -6,16 +6,9 @@ import axios from 'axios';
 function Home() {
   const location = useLocation();
   const navigate = useNavigate();
-  const navItems = [
-    { path: '/reserve', label: 'Reserve Room' },
-    { path: '/rooms', label: 'View Reservations' }, // Updated to link to /rooms
-    { path: '/', label: 'Reservation Rules' },
-  ];
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [reservations, setReservations] = useState([]);
-  const [freeRooms, setFreeRooms] = useState([]);
-  const [userNameId, setUserNameId] = useState(''); // Simulate user identification (e.g., from local storage)
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -27,183 +20,319 @@ function Home() {
       }
     };
     fetchReservations();
-    // Simulate user identification (replace with actual auth logic)
-    const storedNameId = localStorage.getItem('userNameId') || 'RD102312'; // Example user ID
-    setUserNameId(storedNameId);
   }, [apiUrl]);
 
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0]; // 4:47 PM EAT, Sep 12, 2025
-    const allRooms = ['1', '2', '3', '4'];
-    const reservedRooms = new Set();
-
-    reservations.forEach((r) => {
-      if (r.date === today) {
-        reservedRooms.add(r.room);
-      }
-    });
-
-    const free = allRooms.filter((room) => !reservedRooms.has(room));
-    setFreeRooms(free);
-  }, [reservations]);
+  const today = new Date().toISOString().split('T')[0];
+  const allRooms = ['1', '2', '3', '4'];
+  const roomAvailability = allRooms.map(room => {
+    const roomRes = reservations.filter(r => r.date === today && r.room === room).sort((a, b) => new Date(`2025-10-02T${a.timeStart}`) - new Date(`2025-10-02T${b.timeStart}`));
+    const isFree = roomRes.length === 0;
+    return { room, isFree, reservations: roomRes };
+  });
 
   const handleBookRoom = (room) => {
     navigate('/reserve', { state: { room } });
   };
 
-  // Function to get available time slots for a room
-  const getAvailableTimes = (room) => {
-    const today = new Date().toISOString().split('T')[0];
-    const roomReservations = reservations.filter((r) => r.date === today && r.room === room);
-    const allTimes = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-    const bookedTimes = roomReservations.flatMap((r) => {
-      const start = parseInt(r.timeStart.split(':')[0]);
-      const end = parseInt(r.timeEnd.split(':')[0]);
-      return Array.from({ length: end - start }, (_, i) => `${String(start + i).padStart(2, '0')}:00`);
-    });
-    return allTimes.filter((time) => !bookedTimes.includes(time));
+  const handleCheckAvailability = (room) => {
+    navigate('/availability', { state: { room, date: today } });
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-start p-4 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
-      <div className="absolute inset-0 bg-[url('/path/to/mmc-logo.png')] bg-cover bg-center blur-sm opacity-15" style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}></div>
-      <div className="relative z-10 w-full max-w-6xl mx-auto">
-        <nav className="bg-white/80 backdrop-blur-md rounded-lg shadow-lg p-2 mb-2 sticky top-4 flex justify-end z-30">
-          <button className="md:hidden text-gray-700 p-1 focus:outline-none" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-            </svg>
-          </button>
-          <ul className={`md:flex md:flex-row md:space-x-2 ${isMenuOpen ? 'block' : 'hidden'} md:block absolute md:static top-10 right-2 bg-white/90 backdrop-blur-md p-2 rounded-lg shadow-md md:shadow-none`}>
-            {navItems.map((item) => (
-              <li key={item.path} className="my-1 md:my-0">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+      {/* Header with Navigation */}
+      <header className="sticky top-0 z-50 bg-white shadow-md">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <img 
+                src="/mmclogo.jpg" 
+                alt="MMC Logo" 
+                className="h-10 w-auto object-contain"
+              />
+              <h1 className="text-xl font-bold text-blue-800">MMC EUNPA Library</h1>
+            </div>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-1">
+              <Link
+                to="/reserve"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === '/reserve' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Reserve Room
+              </Link>
+              <Link
+                to="/rooms"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === '/rooms' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                View Reservations
+              </Link>
+              <Link
+                to="/"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === '/' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Reservation Rules
+              </Link>
+              <Link
+                to="/about"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === '/about' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                About UNPA Library
+              </Link>
+            </nav>
+            
+            {/* Mobile Navigation Toggle */}
+            <button
+              className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Mobile Navigation Menu */}
+          {isMenuOpen && (
+            <nav className="mt-4 md:hidden bg-white rounded-lg shadow-lg p-4">
+              <div className="flex flex-col space-y-2">
                 <Link
-                  to={item.path}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium ${location.pathname === item.path ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' : 'text-gray-700 hover:text-blue-600'}`}
+                  to="/reserve"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    location.pathname === '/reserve' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  {item.label}
+                  Reserve Room
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        {/* Enhanced Horizontal Tabs with Reduced Spacing */}
-        <div className="flex justify-center mb-4 space-x-2">
-          <Link
-            to="/reserve"
-            className="bg-white text-blue-600 border-2 border-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 hover:shadow-lg transition-all duration-300"
-          >
-            Book a Room
-          </Link>
-          <Link
-            to="/rooms"
-            className="bg-white text-gray-700 border-2 border-gray-300 px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 hover:shadow-lg transition-all duration-300"
-          >
-            View Reservations
-          </Link>
-          <button
-            onClick={() => {
-              const el = document.getElementById('rules');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="bg-white text-gray-700 border-2 border-gray-300 px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 hover:shadow-lg transition-all duration-300"
-          >
-            Reservation Rules
-          </button>
+                <Link
+                  to="/rooms"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    location.pathname === '/rooms' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  View Reservations
+                </Link>
+                <Link
+                  to="/"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    location.pathname === '/' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Reservation Rules
+                </Link>
+                <Link
+                  to="/about"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    location.pathname === '/about' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  About UNPA Library
+                </Link>
+              </div>
+            </nav>
+          )}
         </div>
-        <div className="text-center py-8 px-4 animate-fadeIn">
-          <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-            Welcome to MMC Library
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <section className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            Welcome to MMC EUNPA Library
           </h1>
-          <p className="text-lg text-gray-700 mb-4 max-w-xl mx-auto">
-            Seamlessly reserve group study rooms and elevate your learning journey.
+          <p className="text-xl text-gray-700 max-w-3xl mx-auto mb-8">
+            Seamlessly reserve group study rooms and elevate your learning journey with our modern facilities.
           </p>
-        </div>
-        {/* Centered Available Rooms Today Section */}
-        <div className="flex justify-center">
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-4 animate-fadeIn w-full max-w-md">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">Available Rooms Today</h2>
-            {freeRooms.length > 0 ? (
-              <ul className="space-y-2">
-                {freeRooms.map((room) => (
-                  <li key={room} className="flex items-center space-x-1 text-lg text-gray-700">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 7a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                      </svg>
-                      <span>Room {room} - <span className="text-green-600 font-semibold">Available</span></span>
+          
+          <div className="flex flex-wrap justify-center gap-4 mb-12">
+            <Link
+              to="/reserve"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-md"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Book a Room
+            </Link>
+            
+            <Link
+              to="/rooms"
+              className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-medium py-3 px-6 rounded-lg transition-colors shadow-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              View Reservations
+            </Link>
+          </div>
+        </section>
+
+        {/* Rooms Availability Section */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Room Availability Today ({today})</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {roomAvailability.map(({ room, isFree, reservations }) => (
+              <div key={room} className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className={`h-32 flex items-center justify-center text-4xl font-bold ${isFree ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                  Room {room}
+                </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Status: {isFree ? 'Free All Day' : `${reservations.length} Booking${reservations.length > 1 ? 's' : ''}`}
+                  </h3>
+                  {isFree ? (
+                    <p className="text-sm text-green-600 mb-4">Available for booking anytime today.</p>
+                  ) : (
+                    <div className="space-y-2 mb-4">
+                      {reservations.slice(0, 2).map((res) => (
+                        <div key={res._id} className="text-xs bg-gray-100 p-2 rounded">
+                          {new Date(`${today}T${res.timeStart}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - 
+                          {new Date(`${today}T${res.timeEnd}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} 
+                          ({res.nameId})
+                        </div>
+                      ))}
+                      {reservations.length > 2 && <p className="text-xs text-gray-500">... and {reservations.length - 2} more</p>}
                     </div>
+                  )}
+                  <div className="space-y-2">
                     <button
                       onClick={() => handleBookRoom(room)}
-                      className="bg-blue-600 text-white px-1 py-1 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                      className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      Book Room
+                      Book Now
                     </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-500 text-center py-2">No rooms available today.</p>
-            )}
-          </div>
-        </div>
-        {/* View Reservations Section (Displayed when /rooms is active) */}
-        {location.pathname === '/rooms' && (
-          <div className="flex justify-center mt-8">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-6 w-full max-w-md">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Reservations Today</h2>
-              {reservations.length > 0 ? (
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Booked Rooms</h3>
-                  <ul className="space-y-2">
-                    {reservations
-                      .filter((r) => r.date === new Date().toISOString().split('T')[0])
-                      .map((r) => (
-                        <li key={r.no} className="flex items-center justify-between text-lg text-gray-700">
-                          <span>
-                            Room {r.room} - {r.nameId} ({r.timeStart} to {r.timeEnd})
-                          </span>
-                          {r.nameId === userNameId && getAvailableTimes(r.room).length > 0 && (
-                            <button
-                              onClick={() => handleBookRoom(r.room)}
-                              className="bg-blue-600 text-white px-2 py-1 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-                            >
-                              Re-Book
-                            </button>
-                          )}
-                        </li>
-                      ))}
-                  </ul>
-                  <h3 className="text-xl font-semibold text-gray-700 mt-4 mb-2">Available Times for Booked Rooms</h3>
-                  <ul className="space-y-2">
-                    {reservations
-                      .filter((r) => r.date === new Date().toISOString().split('T')[0])
-                      .map((r) => (
-                        <li key={r.no} className="text-lg text-gray-700">
-                          Room {r.room}: {getAvailableTimes(r.room).join(', ') || 'No available times'}
-                        </li>
-                      ))}
-                  </ul>
+                    <button
+                      onClick={() => handleCheckAvailability(room)}
+                      className="w-full bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                    >
+                      Check Availability
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-gray-500 text-center py-2">No reservations today.</p>
-              )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Reservation Rules Card */}
+        <section id="rules" className="bg-white rounded-xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Reservation Rules</h2>
+          
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 rounded-full mt-0.5">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <p className="text-gray-700">Reserve at Circulation Desk after submission.</p>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 rounded-full mt-0.5">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-gray-700">Maximum 2 hours per slot; extend if no conflict.</p>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 rounded-full mt-0.5">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <p className="text-gray-700">For 2+ persons; advance booking (1+ day) required.</p>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 rounded-full mt-0.5">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <p className="text-gray-700">Keep the room clean and tidy.</p>
             </div>
           </div>
-        )}
-        {/* Reservation Rules Section */}
-        <div id="rules" className="flex justify-center mt-8">
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Reservation Rules</h2>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside" style={{ lineHeight: '1.8' }}>
-              <li>Reserve at Circulation Desk after submission.</li>
-              <li>Maximum 2 hours per slot; extend if no conflict.</li>
-              <li>For 2+ persons; advance booking (1+ day) required.</li>
-              <li>Keep the room clean and tidy.</li>
-            </ul>
+          
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h3 className="font-medium text-gray-900 mb-3">Quick Links</h3>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="http://www.mmclib.net/"
+                className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                MMC Library
+              </a>
+              <a
+                href="http://mmc-edu.net/?page_id=3409"
+                className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                About EUNPA Library
+              </a>
+              <a
+                href="http://mmc-edu.net/"
+                className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                MMC Website
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="bg-gray-800 text-white py-8 mt-12">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <h3 className="text-xl font-bold">MMC EUNPA Library</h3>
+              <p className="text-gray-400">Enhancing your academic journey</p>
+            </div>
+            <div className="flex space-x-4">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Privacy Policy
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Terms of Use
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Contact
+              </a>
+            </div>
+          </div>
+          <div className="mt-6 text-center text-gray-400 text-sm">
+            <p>© {new Date().getFullYear()} MMC EUNPA Library. All rights reserved.</p>
           </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }

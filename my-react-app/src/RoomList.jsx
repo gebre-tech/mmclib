@@ -1,343 +1,162 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
+import ErrorBoundary from './ErrorBoundary';
+import { toast } from 'react-toastify';
 
-export function RoomList({ reservations: propReservations, fetchReservations: propFetch }) {
-  const [localReservations, setLocalReservations] = useState(propReservations || []);
-  const [loading, setLoading] = useState(false);
+function RoomList() {
+  const [reservations, setReservations] = useState([]);
   const [error, setError] = useState(null);
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5173';
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({});
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  const fetchLocal = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchReservations = useCallback(async () => {
     try {
       const response = await axios.get(`${apiUrl}/api/reservations`);
-      setLocalReservations(response.data);
+      setReservations(response.data);
+      setError(null);
     } catch (error) {
       console.error('Error fetching reservations:', error);
-      setError('Failed to load reservations.');
-    } finally {
-      setLoading(false);
+      setError('Failed to load reservations. Please try again later.');
     }
   }, [apiUrl]);
 
   useEffect(() => {
-    if (!propReservations) {
-      fetchLocal();
+    fetchReservations();
+  }, [fetchReservations]);
+
+  const today = new Date().toISOString().split('T')[0]; // "2025-10-02"
+  const reservedRooms = reservations.filter(r => r.date === today);
+
+  const handleExtend = async (reservation) => {
+    try {
+      // Parse current timeEnd and add 2 hours
+      const currentEnd = new Date(`${today} ${reservation.timeEnd}:00`).getTime(); // Use today’s date for consistency
+      const newEndTime = new Date(currentEnd + 2 * 60 * 60 * 1000); // Add 2 hours
+      const updatedTimeEnd = newEndTime.toTimeString().slice(0, 5); // Format as HH:MM
+
+      // Check if extension is valid (e.g., not past library hours, assuming 6:00 PM close)
+      const maxEndTime = new Date(`${today} 18:00:00`).getTime();
+      if (newEndTime.getTime() > maxEndTime) {
+        toast.error('Cannot extend beyond 6:00 PM.');
+        return;
+      }
+
+      // Send update to backend using _id
+      const updatedReservation = { ...reservation, timeEnd: updatedTimeEnd };
+      await axios.put(`${apiUrl}/api/reservations/${reservation._id}`, updatedReservation);
+      await fetchReservations(); // Refresh the list
+      toast.success('Reservation extended successfully!');
+    } catch (error) {
+      console.error('Error extending reservation:', error);
+      toast.error('Failed to extend reservation. Please check the time slot or try again.');
     }
-  }, [fetchLocal, propReservations]);
-
-  useEffect(() => {
-    setLocalReservations(propReservations || []);
-  }, [propReservations]);
-
-  const displayReservations = propReservations || localReservations;
-
-  const addHoursToTime = (timeStr, hours) => {
-    const [h, m] = timeStr.split(':').map(Number);
-    const date = new Date(2000, 0, 1, h, m);
-    date.setHours(date.getHours() + hours);
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  const isEligibleForExtension = (r) => {
-    const nextStart = r.timeEnd;
-    const nextEnd = addHoursToTime(r.timeEnd, 2);
-    return !displayReservations.some(
-      (other) =>
-        other._id !== r._id &&
-        other.date === r.date &&
-        other.room === r.room &&
-        (nextStart < other.timeEnd && nextEnd > other.timeStart)
-    );
+  const handleDelete = async (reservationId) => {
+    try {
+      // Use _id for the request
+      await axios.delete(`${apiUrl}/api/reservations/${reservationId}`);
+      await fetchReservations(); // Refresh the list
+      toast.success('Reservation deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting reservation:', error);
+      toast.error('Failed to delete reservation. Please try again.');
+    }
   };
-
-  const handleExtend = useCallback(
-    async (r) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const newTimeEnd = addHoursToTime(r.timeEnd, 2);
-        await axios.put(`${apiUrl}/api/reservations/${r._id}`, { timeEnd: newTimeEnd });
-        if (propFetch) propFetch();
-        else fetchLocal();
-      } catch (error) {
-        console.error('Error extending reservation:', error);
-        setError('Failed to extend reservation.');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [apiUrl, fetchLocal, propFetch]
-  );
-
-  const handleDelete = useCallback(
-    async (id) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await axios.delete(`${apiUrl}/api/reservations/${id}`);
-        if (propFetch) propFetch();
-        else fetchLocal();
-      } catch (error) {
-        console.error('Error deleting reservation:', error);
-        setError('Failed to delete reservation.');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [apiUrl, fetchLocal, propFetch]
-  );
-
-  const handleEdit = (r) => {
-    setEditingId(r._id);
-    setEditData({ ...r });
-  };
-
-  const handleSaveEdit = useCallback(
-    async (id) => {
-      setLoading(true);
-      setError(null);
-      try {
-        await axios.put(`${apiUrl}/api/reservations/${id}`, editData);
-        setEditingId(null);
-        setEditData({});
-        if (propFetch) propFetch();
-        else fetchLocal();
-      } catch (error) {
-        console.error('Error updating reservation:', error);
-        setError('Failed to update reservation.');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [apiUrl, editData, fetchLocal, propFetch]
-  );
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  if (loading) {
-    return <p className="text-gray-500 text-center py-4 animate-fadeIn">Loading...</p>;
-  }
-
-  if (displayReservations.length === 0) {
-    return <p className="text-gray-500 text-center py-4 animate-fadeIn">No reservations yet. Book one above!</p>;
-  }
 
   return (
-    <div className="overflow-x-auto rounded-lg shadow-md animate-fadeIn">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md mb-4 text-center">{error}</div>
-      )}
-      <table className="w-full text-sm text-gray-700 hidden md:table">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">No.</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Date</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Name ID</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Time</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Persons</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Purpose</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Room</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Remark</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Status</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {displayReservations.map((r, i) => (
-            <tr key={r._id || i} className="hover:bg-gray-50 transition-colors duration-200">
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{r.no || i + 1}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {editingId === r._id ? (
-                  <input
-                    type="date"
-                    name="date"
-                    value={editData.date}
-                    onChange={handleChange}
-                    className="w-full p-1 border rounded"
-                  />
-                ) : (
-                  r.date
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {editingId === r._id ? (
-                  <input
-                    type="text"
-                    name="nameId"
-                    value={editData.nameId}
-                    onChange={handleChange}
-                    className="w-full p-1 border rounded"
-                  />
-                ) : (
-                  r.nameId
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {editingId === r._id ? (
-                  <>
-                    <input
-                      type="time"
-                      name="timeStart"
-                      value={editData.timeStart}
-                      onChange={handleChange}
-                      className="w-20 p-1 border rounded"
-                    /> -{' '}
-                    <input
-                      type="time"
-                      name="timeEnd"
-                      value={editData.timeEnd}
-                      onChange={handleChange}
-                      className="w-20 p-1 border rounded"
-                    />
-                  </>
-                ) : (
-                  `${r.timeStart} - ${r.timeEnd}`
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {editingId === r._id ? (
-                  <input
-                    type="number"
-                    name="persons"
-                    value={editData.persons}
-                    onChange={handleChange}
-                    className="w-full p-1 border rounded"
-                  />
-                ) : (
-                  r.persons
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {editingId === r._id ? (
-                  <select
-                    name="purpose"
-                    value={editData.purpose}
-                    onChange={handleChange}
-                    className="w-full p-1 border rounded"
-                  >
-                    <option value="Study">Study</option>
-                    <option value="Group Project">Group Project</option>
-                    <option value="Meeting">Meeting</option>
-                  </select>
-                ) : (
-                  r.purpose
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">{r.room}</td>
-              <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                {editingId === r._id ? (
-                  <input
-                    type="text"
-                    name="remark"
-                    value={editData.remark}
-                    onChange={handleChange}
-                    className="w-full p-1 border rounded"
-                  />
-                ) : (
-                  r.remark
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {new Date(r.date) < new Date() ? 'Expired' : isEligibleForExtension(r) ? 'Extendable' : 'Active'}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                {editingId === r._id ? (
-                  <button
-                    onClick={() => handleSaveEdit(r._id)}
-                    className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600 mr-2"
-                  >
-                    Save
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleEdit(r)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 mr-2"
-                  >
-                    Edit
-                  </button>
-                )}
-                {isEligibleForExtension(r) && !editingId && (
-                  <button
-                    onClick={() => handleExtend(r)}
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-md hover:from-green-600 hover:to-emerald-700"
-                  >
-                    Extend +2h
-                  </button>
-                )}
-                {!editingId && (
-                  <button
-                    onClick={() => handleDelete(r._id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 ml-2"
-                  >
-                    Delete
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {/* Mobile Card Layout */}
-      <div className="md:hidden space-y-4">
-        {displayReservations.map((r, i) => (
-          <div key={r._id || i} className="bg-white/90 backdrop-blur-md rounded-lg shadow-md p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-medium text-gray-900">Reservation #{r.no || i + 1}</h3>
-              <span className="text-sm text-gray-600">
-                {new Date(r.date) < new Date() ? 'Expired' : isEligibleForExtension(r) ? 'Extendable' : 'Active'}
-              </span>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+        {/* Header */}
+        <header className="bg-white shadow-md py-4 sticky top-0 z-10">
+          <div className="container mx-auto px-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Link to="/" className="text-blue-600 hover:text-blue-800 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+              <h1 className="text-xl font-bold text-gray-900">Current Reservations</h1>
             </div>
-            <p><strong>Date:</strong> {r.date}</p>
-            <p><strong>Name ID:</strong> {r.nameId}</p>
-            <p><strong>Time:</strong> {`${r.timeStart} - ${r.timeEnd}`}</p>
-            <p><strong>Persons:</strong> {r.persons}</p>
-            <p><strong>Purpose:</strong> {r.purpose}</p>
-            <p><strong>Room:</strong> <span className="text-blue-600">{r.room}</span></p>
-            <p><strong>Remark:</strong> {r.remark || 'N/A'}</p>
-            <div className="mt-2 flex flex-col space-y-2">
-              {editingId === r._id ? (
-                <button
-                  onClick={() => handleSaveEdit(r._id)}
-                  className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600"
-                >
-                  Save
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleEdit(r)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600"
-                >
-                  Edit
-                </button>
-              )}
-              {isEligibleForExtension(r) && !editingId && (
-                <button
-                  onClick={() => handleExtend(r)}
-                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-md hover:from-green-600 hover:to-emerald-700"
-                >
-                  Extend +2h
-                </button>
-              )}
-              {!editingId && (
-                <button
-                  onClick={() => handleDelete(r._id)}
-                  className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
-                >
-                  Delete
-                </button>
-              )}
+            <Link to="/" className="text-blue-600 hover:text-blue-800 font-medium">Back to Home</Link>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-8">
+          <section className="bg-white rounded-xl shadow-lg p-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+            {reservedRooms.length > 0 ? (
+              <div className="space-y-6">
+                {reservedRooms.map((r) => (
+                  <div key={r._id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900">Reservation #{r.no}</h3>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Room {r.room}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                      <p><span className="font-medium text-gray-900">Date:</span> {r.date}</p>
+                      <p><span className="font-medium text-gray-900">Name ID:</span> {r.nameId}</p>
+                      <p><span className="font-medium text-gray-900">Time:</span> {r.timeStart} - {r.timeEnd}</p>
+                      <p><span className="font-medium text-gray-900">Persons:</span> {r.persons}</p>
+                      <p><span className="font-medium text-gray-900">Purpose:</span> {r.purpose}</p>
+                      <p><span className="font-medium text-gray-900">Remark:</span> {r.remark || 'N/A'}</p>
+                      <p><span className="font-medium text-gray-900">Clean Acknowledged:</span> {r.acknowledgeClean ? 'Yes' : 'No'}</p>
+                    </div>
+                    <div className="mt-4 flex space-x-3">
+                      <button
+                        onClick={() => handleExtend(r)}
+                        className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-blue-400"
+                        disabled={new Date(`${today} ${r.timeEnd}:00`).getTime() + 2 * 60 * 60 * 1000 > new Date(`${today} 18:00:00`).getTime()}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Extend +2h
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r._id)}
+                        className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <svg className="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c2.219 0 4-1.781 4-4s-1.781-4-4-4-4 1.781-4 4 1.781 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+                <h3 className="mt-4 text-lg font-medium text-gray-900">No Reservations Today</h3>
+                <p className="mt-2 text-gray-600">It looks like there are no reservations scheduled for Thursday, October 02, 2025. Check back later or make a new reservation!</p>
+                <Link to="/reserve" className="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">Book a Room</Link>
+              </div>
+            )}
+          </section>
+        </main>
+
+        <footer className="bg-gray-800 text-white py-6 mt-12">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-sm">MMC EUNPA Library &copy; {new Date().getFullYear()}</p>
+            <div className="mt-2 flex justify-center space-x-4 text-sm">
+              <a href="#" className="text-gray-400 hover:text-white">Privacy Policy</a>
+              <a href="#" className="text-gray-400 hover:text-white">Terms of Use</a>
+              <a href="#" className="text-gray-400 hover:text-white">Contact</a>
             </div>
           </div>
-        ))}
+        </footer>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
 

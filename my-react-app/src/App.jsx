@@ -1,19 +1,22 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './Home';
 import RoomList from './RoomList';
-import ReservationForm from './Form';
-import ToggleStatus from './ToggleStatus';
+import ReservationForm from './ReservationForm';
+import Availability from './Availability';
 
-export default function App() {
+
+function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/rooms" element={<RoomList />} />
+        <Route path="/availability" element={<Availability />} />
         <Route path="/reserve" element={<ReservationForm />} />
-        <Route path="/toggle" element={<ToggleStatus />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
+
+export default App;
