@@ -16,7 +16,7 @@ function Availability() {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   const formatTime = (time) => {
     if (!time) return '';
