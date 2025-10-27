@@ -478,7 +478,7 @@ function ReservationForm() {
                   <p className="text-sm text-gray-600">
                     <span className="font-medium">Library Hours:</span><br />
                     Mon-Fri: 8:00 AM–11:00 PM<br />
-                    Sat: 2:00 AM–5:00 PM<br />
+                    Sat: 8:00 AM–5:00 PM<br />
                     Sun: Closed
                   </p>
                 </div>
