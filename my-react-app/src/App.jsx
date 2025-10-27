@@ -6,6 +6,7 @@ import ReservationForm from './ReservationForm';
 import Availability from './Availability';
 import Analytics from './Analytics';
 import About from './About';
+import Report from './Report';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/rooms" element={<RoomList />} />
         <Route path="/availability" element={<Availability />} />
         <Route path="/reserve" element={<ReservationForm />} />
+        <Route path="/report" element={<Report />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/about" element={<About />} />
       </Routes>

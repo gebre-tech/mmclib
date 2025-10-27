@@ -38,66 +38,56 @@ function Availability() {
     }
   };
 
-  // Circular Clock Component - Same as Home page
+  // Circular Clock Component - Updated to match Home.jsx
   const CircularClock = ({ room, date, reservations }) => {
-    const roomReservations = reservations.filter(r => r.room === room);
+    const roomReservations = reservations.filter((r) => r.date === date && r.room === room);
     const libraryHours = getLibraryHours(date);
-    const radius = 45;
-    const center = 50;
-    const strokeWidth = 8;
+    const radius = 60; // Increased from 45
+    const center = 70;  // Increased from 50
+    const strokeWidth = 10; // Increased from 8
 
-    // Convert 24-hour time to 12-hour format for angle calculation
+    const [currentTime, setCurrentTime] = useState(new Date());
+    useEffect(() => {
+      const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+      return () => clearInterval(timer);
+    }, []);
+
     const timeToAngle = (hours, minutes) => {
-      // Convert to 12-hour format for clock display
       const twelveHour = hours % 12 || 12;
       const totalMinutes = twelveHour * 60 + minutes;
-      const totalDayMinutes = 12 * 60; // 12 hours in minutes
+      const totalDayMinutes = 12 * 60;
       return (totalMinutes / totalDayMinutes) * 360;
     };
 
-    // Generate arc path for booked time slots
     const generateArc = (startTime, endTime) => {
       const [startHours, startMinutes] = startTime.split(':').map(Number);
       const [endHours, endMinutes] = endTime.split(':').map(Number);
-      
       const startAngle = timeToAngle(startHours, startMinutes);
       const endAngle = timeToAngle(endHours, endMinutes);
-      
-      // Convert angles to radians and adjust for SVG coordinate system
       const startRad = (startAngle - 90) * Math.PI / 180;
       const endRad = (endAngle - 90) * Math.PI / 180;
-      
       const startX = center + radius * Math.cos(startRad);
       const startY = center + radius * Math.sin(startRad);
       const endX = center + radius * Math.cos(endRad);
       const endY = center + radius * Math.sin(endRad);
-      
       const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
-      
       return `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY}`;
     };
 
-    // Generate library hours arc (gray background)
     const generateLibraryHoursArc = () => {
       if (libraryHours.start === 0 && libraryHours.end === 0) return '';
-      
       const startAngle = timeToAngle(libraryHours.start, 0);
       const endAngle = timeToAngle(libraryHours.end, 0);
-      
       const startRad = (startAngle - 90) * Math.PI / 180;
       const endRad = (endAngle - 90) * Math.PI / 180;
-      
       const startX = center + radius * Math.cos(startRad);
       const startY = center + radius * Math.sin(startRad);
       const endX = center + radius * Math.cos(endRad);
       const endY = center + radius * Math.sin(endRad);
-      
       const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
-      
       return `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY}`;
     };
 
-    // Generate clock markers exactly like reference image
     const generateClockMarkers = () => {
       const markers = [];
       const hourPositions = [
@@ -112,19 +102,15 @@ function Availability() {
         { hour: 8, angle: 240 },
         { hour: 9, angle: 270 },
         { hour: 10, angle: 300 },
-        { hour: 11, angle: 330 }
+        { hour: 11, angle: 330 },
       ];
 
-      // Generate hour markers and numbers
       hourPositions.forEach(({ hour, angle }) => {
         const rad = (angle - 90) * Math.PI / 180;
-        
-        // Hour markers (thicker lines)
-        const innerX = center + (radius - 15) * Math.cos(rad);
-        const innerY = center + (radius - 15) * Math.sin(rad);
-        const outerX = center + (radius - 5) * Math.cos(rad);
-        const outerY = center + (radius - 5) * Math.sin(rad);
-        
+        const innerX = center + (radius - 20) * Math.cos(rad);
+        const innerY = center + (radius - 20) * Math.sin(rad);
+        const outerX = center + (radius - 8) * Math.cos(rad);
+        const outerY = center + (radius - 8) * Math.sin(rad);
         markers.push(
           <line
             key={`marker-${hour}`}
@@ -133,15 +119,12 @@ function Availability() {
             x2={outerX}
             y2={outerY}
             stroke="#374151"
-            strokeWidth="2.5"
+            strokeWidth="3" // Increased from 2.5
             strokeLinecap="round"
           />
         );
-        
-        // Add hour numbers - positioned further out
-        const labelX = center + (radius + 8) * Math.cos(rad);
-        const labelY = center + (radius + 8) * Math.sin(rad);
-        
+        const labelX = center + (radius + 12) * Math.cos(rad);
+        const labelY = center + (radius + 12) * Math.sin(rad);
         markers.push(
           <text
             key={`label-${hour}`}
@@ -149,30 +132,22 @@ function Availability() {
             y={labelY}
             textAnchor="middle"
             dominantBaseline="middle"
-            className="font-bold fill-gray-800"
-            style={{ 
-              fontSize: '12px', 
-              fontWeight: 'bold',
-              fontFamily: 'Arial, sans-serif'
-            }}
+            className="font-semibold fill-gray-900"
+            style={{ fontSize: '14px', fontFamily: 'Inter, sans-serif' }} // Updated from 12px, Arial
           >
             {hour}
           </text>
         );
       });
 
-      // Generate smaller minute markers
       for (let minute = 0; minute < 60; minute += 5) {
-        if (minute % 15 === 0) continue; // Skip quarters (already have hour markers)
-        
+        if (minute % 15 === 0) continue;
         const angle = (minute / 60) * 360 - 90;
         const rad = angle * Math.PI / 180;
-        
-        const innerX = center + (radius - 10) * Math.cos(rad);
-        const innerY = center + (radius - 10) * Math.sin(rad);
-        const outerX = center + (radius - 6) * Math.cos(rad);
-        const outerY = center + (radius - 6) * Math.sin(rad);
-        
+        const innerX = center + (radius - 15) * Math.cos(rad);
+        const innerY = center + (radius - 15) * Math.sin(rad);
+        const outerX = center + (radius - 8) * Math.cos(rad);
+        const outerY = center + (radius - 8) * Math.sin(rad);
         markers.push(
           <line
             key={`minute-${minute}`}
@@ -181,34 +156,32 @@ function Availability() {
             x2={outerX}
             y2={outerY}
             stroke="#6B7280"
-            strokeWidth="1"
+            strokeWidth="1.5" // Increased from 1
             strokeLinecap="round"
           />
         );
       }
-      
       return markers;
     };
 
     const isClosed = libraryHours.start === 0 && libraryHours.end === 0;
-    const dateStr = new Date(date).toISOString().split('T')[0];
-    const isToday = dateStr === new Date().toISOString().split('T')[0];
 
     return (
-      <div className="flex flex-col items-center space-y-3">
+      <div className="flex flex-col items-center space-y-3 p-3"> {/* Added p-3 */}
         <div className="relative">
-          <svg width="140" height="140" viewBox="0 0 100 100" className="transform">
-            {/* Background circle */}
-            <circle
-              cx={center}
-              cy={center}
-              r={radius}
-              fill="none"
-              stroke="#E5E7EB"
-              strokeWidth={strokeWidth}
+          <svg width="150" height="150" viewBox="0 0 140 140" className="transform scale-100"> {/* Updated dimensions */}
+            {/* Background logo */}
+            <image
+              href="/mmclogo.jpg"
+              x={center - 30}
+              y={center - 30}
+              width="65"
+              height="115"
+              preserveAspectRatio="xMidYMid meet"
+              opacity="2"
+              aria-label="MMC Logo"
             />
-            
-            {/* Library hours arc */}
+            <circle cx={center} cy={center} r={radius} fill="none" stroke="#E5E7EB" strokeWidth={strokeWidth} />
             {!isClosed && (
               <path
                 d={generateLibraryHoursArc()}
@@ -218,8 +191,6 @@ function Availability() {
                 strokeLinecap="round"
               />
             )}
-            
-            {/* Booked time slots */}
             {roomReservations.map((reservation, index) => (
               <path
                 key={index}
@@ -232,78 +203,64 @@ function Availability() {
                 data-tooltip-content={`${formatTime(reservation.timeStart)} - ${formatTime(reservation.timeEnd)}`}
               />
             ))}
-            
-            {/* Clock markers */}
             {generateClockMarkers()}
-            
-            {/* Center dot */}
-            <circle cx={center} cy={center} r="3" fill="#374151" />
-            
-            {/* Clock hands for current time (only for today) */}
-            {isToday && (
+            <circle cx={center} cy={center} r="3.5" fill="#374151" /> {/* Updated r from 3 */}
+            {date === today.toISOString().split('T')[0] && (
               <>
-                {/* Hour hand */}
                 <line
                   x1={center}
                   y1={center}
-                  x2={center + (radius - 25) * Math.cos((((new Date().getHours() % 12) * 30 + new Date().getMinutes() * 0.5) - 90) * Math.PI / 180)}
-                  y2={center + (radius - 25) * Math.sin((((new Date().getHours() % 12) * 30 + new Date().getMinutes() * 0.5) - 90) * Math.PI / 180)}
+                  x2={center + (radius - 30) * Math.cos((((currentTime.getHours() % 12) * 30 + currentTime.getMinutes() * 0.5) - 90) * Math.PI / 180)}
+                  y2={center + (radius - 30) * Math.sin((((currentTime.getHours() % 12) * 30 + currentTime.getMinutes() * 0.5) - 90) * Math.PI / 180)}
                   stroke="#374151"
-                  strokeWidth="3"
+                  strokeWidth="4" // Updated from 3
                   strokeLinecap="round"
                 />
-                {/* Minute hand */}
                 <line
                   x1={center}
                   y1={center}
-                  x2={center + (radius - 15) * Math.cos((new Date().getMinutes() * 6 - 90) * Math.PI / 180)}
-                  y2={center + (radius - 15) * Math.sin((new Date().getMinutes() * 6 - 90) * Math.PI / 180)}
+                  x2={center + (radius - 20) * Math.cos((currentTime.getMinutes() * 6 - 90) * Math.PI / 180)}
+                  y2={center + (radius - 20) * Math.sin((currentTime.getMinutes() * 6 - 90) * Math.PI / 180)}
                   stroke="#374151"
-                  strokeWidth="2"
+                  strokeWidth="2.8" // Updated from 2
                   strokeLinecap="round"
                 />
-                {/* Second hand */}
                 <line
                   x1={center}
                   y1={center}
-                  x2={center + (radius - 10) * Math.cos((new Date().getSeconds() * 6 - 90) * Math.PI / 180)}
-                  y2={center + (radius - 10) * Math.sin((new Date().getSeconds() * 6 - 90) * Math.PI / 180)}
+                  x2={center + (radius - 14) * Math.cos((currentTime.getSeconds() * 6 - 90) * Math.PI / 180)}
+                  y2={center + (radius - 14) * Math.sin((currentTime.getSeconds() * 6 - 90) * Math.PI / 180)}
                   stroke="#DC2626"
-                  strokeWidth="1"
+                  strokeWidth="1.5" // Updated from 1
                   strokeLinecap="round"
                 />
               </>
             )}
           </svg>
-          
-          {/* Status indicator in center */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
-              isClosed ? 'bg-gray-400' :
-              roomReservations.length === 0 ? 'bg-green-500' : 
-              roomReservations.length >= 3 ? 'bg-red-500' : 'bg-yellow-500'
-            }`}>
-              <span className="text-white text-xs font-bold">
-                {roomReservations.length}
-              </span>
+            <div
+              className={`w-7 h-7 rounded-full flex items-center justify-center shadow-sm ${
+                isClosed ? 'bg-gray-500' : roomReservations.length === 0 ? 'bg-green-500' : roomReservations.length >= 3 ? 'bg-red-500' : 'bg-yellow-500'
+              }`}
+            >
+              <span className="text-white text-xs font-bold">{roomReservations.length}</span>
             </div>
           </div>
         </div>
-        
-        {/* Tooltips for booked slots */}
         {roomReservations.map((reservation, index) => (
           <Tooltip key={index} id={`tooltip-${room}-${index}`} />
         ))}
-        
-        {/* Status text */}
-        <div className="text-center">
+        <div className="text-center space-y-1">
           <div className="text-sm font-bold text-gray-900">
+            Study Room {room}
+          </div>
+          <div className="text-xs font-semibold text-gray-700">
             {isClosed ? 'Closed' : roomReservations.length === 0 ? 'Available' : `${roomReservations.length} Booking${roomReservations.length !== 1 ? 's' : ''}`}
           </div>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-gray-600">
             {!isClosed && (
               <>
-                {libraryHours.start <= 12 ? 'AM' : 'PM'} Hours
+                {libraryHours.start <= 12 ? '8:00 AM' : '2:00 PM'} - {libraryHours.end <= 12 ? '5:00 PM' : '11:00 PM'}
               </>
             )}
           </div>
