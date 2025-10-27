@@ -469,7 +469,7 @@ function ReservationForm() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <p className="text-sm text-gray-700">Library Hours: Mon-Fri 8:00 AM–11:00 PM, Sat 2:00 AM–5:00 PM, Closed Sun.</p>
+                    <p className="text-sm text-gray-700">Library Hours: Mon-Fri 8:00 AM–11:00 PM, Sat 8:00 AM–5:00 PM, Closed Sun.</p>
                   </div>
                 </div>
                 <div className="mt-6 pt-6 border-t border-gray-200">
