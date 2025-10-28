@@ -195,7 +195,7 @@ function About() {
                     <h3 className="font-semibold text-gray-900 mb-2">Library Hours</h3>
                     <p className="text-gray-600">
                       <strong>Monday - Friday:</strong> 8:00 AM – 11:00 PM<br />
-                      <strong>Saturday:</strong> 2:00 AM – 5:00 PM<br />
+                      <strong>Saturday:</strong> 8:00 AM – 5:00 PM<br />
                       <strong>Sunday:</strong> Closed
                     </p>
                   </div>
