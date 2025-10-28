@@ -181,47 +181,48 @@ function About() {
               </ul>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-6 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Contact Information</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Location</h3>
-                  <p className="text-gray-600">Bole Kifle Ketema, Kebele 11, Addis Ababa , Ethiopia</p>
-                  <p className="text-gray-600">Myungsung Medical Collge(MMC)/Korean Hospital(MCM)</p>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Library Hours</h3>
-                  <p className="text-gray-600">
-                    <strong>Monday - Friday:</strong> 8:00 AM – 11:00 PM<br />
-                    <strong>Saturday:</strong> 8:00 AM – 5:00 PM<br />
-                    <strong>Sunday:</strong> Closed
-                  </p>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Contact</h3>
-                  <p className="text-gray-600">
-                    <strong>📞</strong>  +251-116-39-40-26/53 <br />
-                    <strong>Email:</strong> library@edu.net<br />
-                    <strong>P. O. Box :</strong> 14972 <br />
-                    <strong>Circulation Desk:</strong> Ground Floor at EUNPA Library next to the main entrance.
-                  </p>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Staff</h3>
-                  <p className="text-gray-600">
-                    <strong>Head Librarian:</strong> Mrs. Tirsit Wuhib<br />
-                    <strong>Multi-Media Librarian:</strong> Mr. Abera Eyenew<br />
-                    <strong>Librarian:</strong> Mr. Yoseph Begna<br />
-                    <strong>Assistant Librarian:</strong> Mr. Gebremeeskel Shimels<br />
-                    <strong>IT Support:</strong> gebremeskelshimels@gmail.com<br />
-                    <strong><a href='http://www.mmclib.net'>Website:</a></strong> <a href='http://www.mmclib.net'>www.mmclib.net</a>
-                  </p>
+              <div className="bg-gray-50 rounded-lg p-6 mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Contact Information</h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Location</h3>
+                    <p className="text-gray-600">Bole Kifle Ketema, Kebele 11, Addis Ababa , Ethiopia</p>
+                    <p className="text-gray-600">Myungsung Medical Collge(MMC)/Korean Hospital(MCM)</p>
+                    
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Library Hours</h3>
+                    <p className="text-gray-600">
+                      <strong>Monday - Friday:</strong> 8:00 AM – 11:00 PM<br />
+                      <strong>Saturday:</strong> 2:00 AM – 5:00 PM<br />
+                      <strong>Sunday:</strong> Closed
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Contact</h3>
+                    <p className="text-gray-600">
+                      <strong>📞</strong>  +251-116-39-40-26/53 <br />
+                      <strong>Email:</strong> library@edu.net<br />
+                      <strong>P. O. Box :</strong> 14972 <br />
+                      <strong>Circulation Desk:</strong> Ground at EUNPA Library next to the main entrance.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Staff</h3>
+                    <p className="text-gray-600">
+                      <strong>Head Librarian:</strong> Mrs. Tirsit Wuhib<br />
+                      <strong>Multi-Media Librarian:</strong> Mr. Abera Eyenew<br />
+                      <strong>Librarian:</strong> Mr. Yoseph Begna<br />
+                      <strong>Assistant Librarian:</strong> Mr. Gebremeeskel Shimels<br />
+                      <strong>IT Support:</strong> gebremeskelshimels@gmail.com<br />
+                      <strong><a href=' www.mmclib.net'>Website:</a></strong> <a href=' www.mmclib.net'>www.mmclib.net</a>
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Need Assistance?</h2>
