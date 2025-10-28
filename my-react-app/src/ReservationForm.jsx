@@ -10,6 +10,7 @@ function ReservationForm() {
   const today = new Date();
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     no: 0,
     date: location.state?.date || today,
@@ -222,21 +223,101 @@ function ReservationForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+      {/* Header - Same as Home page */}
+      <header className="sticky top-0 z-50 bg-blue-50 shadow-sm border-b border-blue-100">
+        <div className="container mx-auto px-3 py-2">
           <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center space-x-2">
-              <img src="/mmclogo.jpg" alt="MMC Logo" className="h-8 w-auto object-contain" />
-              <h1 className="text-lg font-bold text-blue-800">MMC EUNPA Library</h1>
-            </Link>
-            <Link to="/" className="text-blue-600 hover:text-blue-800 font-medium">← Back to Home</Link>
+            <div className="flex flex-row items-center space-x-2">
+              <div className="relative">
+                <img
+                  src="/mmclogo.jpg"
+                  alt="MMC Logo"
+                  className="h-12 w-30 object-contain rounded shadow-sm"
+                  tabIndex={0}
+                  aria-label="MMC EUNPA Library Logo"
+                />
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-1.5 border-white shadow-sm animate-pulse" />
+              </div>
+              <div>
+                <h1 className="text-sm font-bold text-blue-900 tracking-tight font-serif">MMC EUNPA Library</h1>
+                <p className="text-[10px] text-blue-700 font-medium">Study Room Reservation System</p>
+              </div>
+            </div>
+
+            <nav className="hidden md:flex space-x-1 bg-blue-100 rounded p-1" aria-label="Main navigation">
+              {[
+                { path: '/reserve', name: 'Reserve', icon: '📅' },
+                { path: '/rooms', name: 'Reservations', icon: '👥' },
+                { path: '/availability', name: 'Availability', icon: '🔍' },
+                { path: '/report', name: 'Generate Report', icon: '📋' },
+                { path: '/analytics', name: 'Analytics', icon: '📊' },
+                { path: '/about', name: 'About', icon: 'ℹ️' },
+              ].map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`relative flex items-center space-x-1 px-2 py-1.5 rounded text-xs font-semibold transition-all duration-200 ${
+                    location.pathname === item.path
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-blue-800 hover:bg-blue-200 hover:text-blue-900'
+                  }`}
+                  aria-current={location.pathname === item.path ? 'page' : undefined}
+                >
+                  <span className="text-sm">{item.icon}</span>
+                  <span>{item.name}</span>
+                </Link>
+              ))}
+            </nav>
+
+            <button
+              className="md:hidden p-1 rounded text-blue-800 hover:bg-blue-200 transition-colors duration-200"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle mobile menu"
+              aria-expanded={isMenuOpen}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
+
+          {isMenuOpen && (
+            <nav
+              className="mt-1 md:hidden bg-blue-100 rounded shadow-sm p-2 transition-all duration-200"
+              aria-label="Mobile navigation"
+            >
+              <div className="flex flex-col space-y-1">
+                {[
+                  { path: '/reserve', name: 'Reserve', icon: '📅' },
+                  { path: '/rooms', name: 'Reservations', icon: '👥' },
+                  { path: '/availability', name: 'Availability', icon: '🔍' },
+                  { path: '/report', name: 'Generate Report', icon: '📋' },
+                  { path: '/analytics', name: 'Analytics', icon: '📊' },
+                  { path: '/about', name: 'About', icon: 'ℹ️' },
+                ].map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center space-x-1 px-2.5 py-1.5 rounded text-xs font-semibold transition-all duration-200 ${
+                      location.pathname === item.path
+                        ? 'bg-blue-600 text-white'
+                        : 'text-blue-800 hover:bg-blue-200 hover:text-blue-900'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                    aria-current={location.pathname === item.path ? 'page' : undefined}
+                  >
+                    <span className="text-sm">{item.icon}</span>
+                    <span>{item.name}</span>
+                  </Link>
+                ))}
+              </div>
+            </nav>
+          )}
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 py-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Room Reservation</h1>
@@ -469,7 +550,7 @@ function ReservationForm() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <p className="text-sm text-gray-700">Library Hours: Mon-Fri 8:00 AM–11:00 PM, Sat 2:00 AM–5:00 PM, Closed Sun.</p>
+                    <p className="text-sm text-gray-700">Library Hours: Mon-Fri 8:00 AM–11:00 PM, Sat 8:00 AM–5:00 PM, Closed Sun.</p>
                   </div>
                 </div>
                 <div className="mt-6 pt-6 border-t border-gray-200">
@@ -478,7 +559,7 @@ function ReservationForm() {
                   <p className="text-sm text-gray-600">
                     <span className="font-medium">Library Hours:</span><br />
                     Mon-Fri: 8:00 AM–11:00 PM<br />
-                    Sat: 2:00 AM–5:00 PM<br />
+                    Sat: 8:00 AM–5:00 PM<br />
                     Sun: Closed
                   </p>
                 </div>
@@ -505,6 +586,34 @@ function ReservationForm() {
           </div>
         )}
       </main>
+
+      {/* Footer - Same as Home page */}
+      <footer className="bg-blue-50 border-t border-blue-100 py-3">
+        <div className="container mx-auto px-3">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
+            <div className="flex items-center space-x-2">
+              <img src="/mmclogo.jpg" alt="MMC Logo" className="h-5 w-5 object-contain rounded" />
+              <span className="text-xs text-gray-600">© 2025 MMC EUNPA Library. All rights reserved.</span>
+              <span className="text-xs text-green-600">Developed by Gebremeskel Shimels.</span>
+            </div>
+            <div className="flex space-x-3">
+              {[
+                { href: 'http://koha.mmclib.net/', name: 'Open OPAC', color: 'blue' },
+                { href: 'http://www.mmclib.net/', name: 'MMC Library', color: 'green' },
+                { href: 'http://mmc-edu.net/', name: 'MMC Website', color: 'purple' },
+              ].map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className={`text-xs text-gray-600 hover:text-${link.color}-600 transition-colors duration-200`}
+                >
+                  {link.name}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
